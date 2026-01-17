@@ -17,7 +17,7 @@ router.get("/", async (req: any, res: any) => {
     .from(wishlist)
     .where(eq(wishlist.userId, userId));
 
-  const response = [];
+  const response: any[] = [];
 
   for (const item of items) {
     const deal = await db
@@ -26,11 +26,12 @@ router.get("/", async (req: any, res: any) => {
       .where(eq(deals.id, item.dealId))
       .then((d) => d[0]);
 
-    if (
+    const isExpired =
       !deal ||
-      !deal.isActive ||
-      (deal.expiresAt && deal.expiresAt < new Date())
-    ) {
+      deal.isActive === false ||
+      (deal.expiresAt && deal.expiresAt < new Date());
+
+    if (isExpired) {
       response.push({
         dealId: item.dealId,
         alertEnabled: item.alertEnabled,
@@ -61,6 +62,7 @@ router.get("/", async (req: any, res: any) => {
   res.json(response);
 });
 
+
 router.post("/", async (req: any, res: any) => {
   const { id: userId, role } = req.user;
   const body = addWishlistSchema.parse(req.body);
@@ -85,6 +87,7 @@ router.post("/", async (req: any, res: any) => {
 
   res.json({ success: true });
 });
+
 
 router.delete("/:dealId", async (req: any, res: any) => {
   const { id: userId } = req.user;
