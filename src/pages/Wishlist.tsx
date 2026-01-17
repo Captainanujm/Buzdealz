@@ -23,7 +23,7 @@ export default function Wishlist() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Your Wishlist ❤️</h1>
+      <h1 className="text-2xl font-bold mb-6">Your Wishlist</h1>
 
       {wishlistWithDetails.length === 0 ? (
         <p>No items in wishlist</p>
