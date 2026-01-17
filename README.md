@@ -359,8 +359,7 @@ ISC
 
 ## 👤 Author
 
-BuzDealz Development Team
-
+Anuj mishra
 ---
 
 **Last Updated**: January 18, 2026
