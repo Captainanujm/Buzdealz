@@ -9,8 +9,7 @@ import { trackEvent } from "../utils/analytics";
 
 const router = express.Router();
 
-/* GET wishlist */
-router.get("/", async (req: any, res:any) => {
+router.get("/", async (req: any, res: any) => {
   const userId = req.user.id;
 
   const items = await db
@@ -27,8 +26,18 @@ router.get("/", async (req: any, res:any) => {
       .where(eq(deals.id, item.dealId))
       .then((d) => d[0]);
 
-    if (!deal || !deal.isActive || (deal.expiresAt && deal.expiresAt < new Date())) {
-      response.push({ ...item, status: "expired", bestPrice: null });
+    if (
+      !deal ||
+      !deal.isActive ||
+      (deal.expiresAt && deal.expiresAt < new Date())
+    ) {
+      response.push({
+        dealId: item.dealId,
+        alertEnabled: item.alertEnabled,
+        createdAt: item.createdAt,
+        status: "expired",
+        bestPrice: null,
+      });
       continue;
     }
 
@@ -40,21 +49,26 @@ router.get("/", async (req: any, res:any) => {
       .limit(1)
       .then((p) => p[0]?.amount ?? null);
 
-    response.push({ ...item, status: "active", bestPrice });
+    response.push({
+      dealId: item.dealId,
+      alertEnabled: item.alertEnabled,
+      createdAt: item.createdAt,
+      status: "active",
+      bestPrice,
+    });
   }
 
   res.json(response);
 });
 
-/* POST wishlist */
-router.post("/", async (req: any, res) => {
-  const userId = req.user.id;
-  const role = req.user.role;
-
+router.post("/", async (req: any, res: any) => {
+  const { id: userId, role } = req.user;
   const body = addWishlistSchema.parse(req.body);
 
   if (body.alertEnabled && role !== "subscriber") {
-    return res.status(403).json({ message: "Upgrade required for alerts" });
+    return res
+      .status(403)
+      .json({ message: "Upgrade required to enable alerts" });
   }
 
   try {
@@ -65,27 +79,22 @@ router.post("/", async (req: any, res) => {
     });
 
     trackEvent("wishlist_add", { userId, dealId: body.dealId });
-    res.json({ success: true });
   } catch {
-    res.json({ success: true });
+    
   }
+
+  res.json({ success: true });
 });
 
-/* DELETE wishlist */
-router.delete("/:dealId", async (req: any, res) => {
+router.delete("/:dealId", async (req: any, res: any) => {
+  const { id: userId } = req.user;
+  const { dealId } = req.params;
+
   await db
     .delete(wishlist)
-    .where(
-      and(
-        eq(wishlist.userId, req.user.id),
-        eq(wishlist.dealId, req.params.dealId)
-      )
-    );
+    .where(and(eq(wishlist.userId, userId), eq(wishlist.dealId, dealId)));
 
-  trackEvent("wishlist_remove", {
-    userId: req.user.id,
-    dealId: req.params.dealId,
-  });
+  trackEvent("wishlist_remove", { userId, dealId });
 
   res.json({ success: true });
 });
